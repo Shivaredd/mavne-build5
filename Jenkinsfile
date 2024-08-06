@@ -1,9 +1,30 @@
-podTemplate(containers: [containerTemplate(name: 'maven', image: 'maven', command: 'sleep', args: 'infinity')]) {
-  node(POD_LABEL) {
-    checkout scm
-    container('maven') {
-      sh 'mvn -B -ntp -Dmaven.test.failure.ignore verify'
+node {
+    try {
+        stage('Checkout') {
+            checkout scm
+        }
+        
+        stage('Build') {
+            sh 'mvn clean install'
+        }
+        
+        stage('Test') {
+            sh 'mvn test'
+        }
+        
+        stage('Deploy') {
+            sh 'mvn deploy'
+        }
+    } catch (Exception e) {
+        currentBuild.result = 'FAILURE'
+        throw e
+    } finally {
+        echo 'This will always run'
     }
-    junit '**/target/surefire-reports/TEST-*.xml'
-  }
+    
+    if (currentBuild.result == 'SUCCESS') {
+        echo 'This will run only if successful'
+    } else {
+        echo 'This will run only if failed'
+    }
 }
